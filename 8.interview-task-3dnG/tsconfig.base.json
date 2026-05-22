@@ -1,0 +1,32 @@
+{
+    "extends": "@tsconfig/node22/tsconfig.json",
+    "compilerOptions": {
+        "module": "nodenext",
+        "moduleResolution": "nodenext",
+
+        "allowSyntheticDefaultImports": true,
+
+        "declaration": true,
+        "sourceMap": true,
+
+        "resolveJsonModule": true,
+        "isolatedModules": true,
+        "verbatimModuleSyntax": true,
+
+        "noUncheckedIndexedAccess": true,
+        "noImplicitOverride": true,
+        "forceConsistentCasingInFileNames": true,
+
+        "allowJs": false,
+        "skipLibCheck": true,
+        "types": ["node"],
+        "noEmit": false,
+
+        "rootDir": "./src",
+        "outDir": "./dist/esm",
+        "declarationDir": "./dist/types/esm",
+        "composite": true
+    },
+    "include": [],
+    "references": []
+}

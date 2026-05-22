@@ -1,0 +1,32 @@
+{
+  "name": "5.user-and-transactions-api",
+  "version": "1.0.0",
+  "description": "Practice to build a simple user and transaction API with fastify",
+  "homepage": "https://github.com/fermar8/interview-practice-2026#readme",
+  "bugs": {
+    "url": "https://github.com/fermar8/interview-practice-2026/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fermar8/interview-practice-2026.git"
+  },
+  "license": "ISC",
+  "author": "fermar8",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "npm run test",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js"
+  },
+  "devDependencies": {
+    "@tsconfig/node24": "^24.0.4",
+    "@types/node": "^25.9.1",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "fastify": "^5.8.5",
+    "sqlite3": "^6.0.1",
+    "typebox": "^1.1.38"
+  }
+}

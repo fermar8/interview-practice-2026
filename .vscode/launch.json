@@ -1,0 +1,21 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "API: Debug (build + run)",
+      "type": "node",
+      "request": "launch",
+      "preLaunchTask": "api: build",
+      "program": "${workspaceFolder}/5.user and transactions API/dist/index.js",
+      "cwd": "${workspaceFolder}/5.user and transactions API",
+      "console": "integratedTerminal",
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "sourceMaps": true,
+      "outFiles": [
+        "${workspaceFolder}/5.user and transactions API/dist/**/*.js"
+      ]
+    }
+  ]
+}

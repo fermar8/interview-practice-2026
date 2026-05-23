@@ -85,6 +85,19 @@ async function getDataWithExpiration(key: string) {
 }
 ```
 
+We can also invalidate cache manually when data changes:
+
+```typescript 
+async function updateData(key: string, newValue: any) {
+  // Update database
+  await updateDatabase(key, newValue);
+
+  // Invalidate cache
+  await redisClient.del(key);
+}
+
+```
+
 ## Benefits for Read-Heavy APIs
 - **Read-heavy endpoints** benefit greatly from caching
 - Significantly reduces response time

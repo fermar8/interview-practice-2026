@@ -51,6 +51,7 @@ export async function getStore() {
             return null
         }
         const { userId: _, ...rest } = userProfile
+        // we don't use delete here because it mutates the original object, and we want to keep it immutable.
     
         return rest
 
@@ -67,6 +68,15 @@ export async function getStore() {
         return transactions;
         // Complexity is 0(n) but with two passes. 
         // If it became critical, we could solve it with one pass with a for ..of loop
+
+        const transactionsForUser: Omit<UserTransaction, 'userId'>[] = [];
+        for (const transaction of userTransactions) {
+            if (transaction.userId === userId) {
+                const { userId: _, ...rest } = transaction;
+                transactionsForUser.push(rest);
+            }
+        }
+        return transactionsForUser;
     };
 
     // Task 3
@@ -81,6 +91,14 @@ export async function getStore() {
 
         // Complexity is 0(n).
         // Could also be done with a reduce function
+        const balanceWithReduce = userTransactions.reduce((acc, transaction) => {
+            if (transaction.userId === userId) {
+                return acc + transaction.amount;
+            }
+            return acc;
+        }, 0);
+
+        return balanceWithReduce;
     };
 
     // Task 4
@@ -134,6 +152,21 @@ export async function getStore() {
 
     // Task 5
     const getUserWithLargestAccountBalance = (): { accountBalance: number; userId: string | null } => {
+        // array method wouldn't be optimal because we would have to calculate the balance for each user every time, which would be O(n^2) in the worst case.
+        // the solution for the array method would be:
+        // let largestBalance = -Infinity;
+        // let largestBalanceUserId: string | null = null;
+        // for (const user of users) {  
+        //     const balance = getUserAccountBalance(user.id); // this is O(n), checking all transactions and we do it for each user, so O(n^2)
+        //     if (balance > largestBalance) {
+        //         largestBalance = balance;  xccccccccccccccccccccccccccccccccccccccccccccccccccc                
+        //         largestBalanceUserId = user.id;
+        //     }
+        // }
+        // return {
+        //     accountBalance: largestBalance,
+        //     userId: largestBalanceUserId,
+        // };
         const balancesByUserId = new Map<string, number>();
 
         for (const transaction of userTransactions) {

@@ -105,7 +105,7 @@ export async function getStore() {
     const getUserFullProfile = (
         userId: string,
     ): UserFullProfile | null => {
-        /*
+        
         let accountBalance = 0;
         const userProfile = userProfiles.find((profile) => userId === profile.userId);
         const user = users.find((u) => userId === u.id);
@@ -123,8 +123,9 @@ export async function getStore() {
             ...user,
             ...restOfProfile,
             accountBalance
-        }*/
+        }
         // Complexity is 0(n) but runs 3 times. If it's heavy read, we could have indexes.
+        /*
         const user = usersById.get(userId);
         const userProfile = profilesByUserId.get(userId);
         const transactions = transactionsByUserId.get(userId);
@@ -147,7 +148,7 @@ export async function getStore() {
             ...user,
             ...profileWithoutUserId,
             accountBalance,
-        };
+        };*/
     };
 
     // Task 5

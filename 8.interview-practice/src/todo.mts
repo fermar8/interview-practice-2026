@@ -160,7 +160,7 @@ export async function getStore() {
         // for (const user of users) {  
         //     const balance = getUserAccountBalance(user.id); // this is O(n), checking all transactions and we do it for each user, so O(n^2)
         //     if (balance > largestBalance) {
-        //         largestBalance = balance;  xccccccccccccccccccccccccccccccccccccccccccccccccccc                
+        //         largestBalance = balance;                
         //         largestBalanceUserId = user.id;
         //     }
         // }

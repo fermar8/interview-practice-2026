@@ -67,6 +67,7 @@ export async function getStore() {
         });
         return transactions;
         // Complexity is 0(n) but with two passes. 
+        // space complexity is O(n) because we create a new array with the transactions for the user, but we could optimize it to O(1) if we mutate the original array
         // If it became critical, we could solve it with one pass with a for ..of loop
 
         const transactionsForUser: Omit<UserTransaction, 'userId'>[] = [];
@@ -273,12 +274,14 @@ export async function getStore() {
                 currentBalance + transaction.amount
             );
         }
-
-        let largestNegativeBalance = -Infinity;
+        // I think here there is a bug, because it should start from 0, but if all the balances are negative, it will return 0 instead of the largest negative balance, which is not correct.
+        //  So we should start from -Infinity and then check if we found any negative balance.
+        // It would be better to start from 0
+        let largestNegativeBalance = 0;
         let largestNegativeBalanceUserId: string | null = null;
 
         for (const [userId, balance] of balancesByUserId) {
-            if (balance > largestNegativeBalance && balance < 0) {
+            if (balance < largestNegativeBalance) {
             largestNegativeBalance = balance;
             largestNegativeBalanceUserId = userId;
             }
@@ -286,9 +289,7 @@ export async function getStore() {
 
         return {
             accountBalance:
-                largestNegativeBalance === -Infinity
-                ? 0
-                : largestNegativeBalance,
+                largestNegativeBalance ?? 0,
             userId: largestNegativeBalanceUserId,
         };
 

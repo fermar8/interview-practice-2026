@@ -4,7 +4,9 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "check": "tsc --noEmit"
+    "check": "tsc --noEmit",
+    "export:dsa:pdf": "node scripts/export-dsa-printable.mjs pdf",
+    "export:dsa:docx": "node scripts/export-dsa-printable.mjs docx"
   },
   "devDependencies": {
     "typescript": "^5.8.3"

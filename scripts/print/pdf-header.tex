@@ -1,0 +1,21 @@
+\usepackage{graphicx}
+\usepackage{fancyhdr}
+\usepackage{needspace}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+
+% Scale oversized images to fit inside printable page bounds.
+\setkeys{Gin}{width=\linewidth,height=0.88\textheight,keepaspectratio}
+
+% Footer page numbering.
+\setlength{\headheight}{14pt}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0pt}
+
+% Reduce widows/orphans to keep text flow readable in print.
+\widowpenalty=10000
+\clubpenalty=10000
+\displaywidowpenalty=10000

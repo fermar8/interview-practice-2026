@@ -14,14 +14,7 @@ const FINAL_DOCX = path.join(EXPORT_DIR, "DSA-for-beginners-printable.docx");
 const HEADER_TEX = path.join(ROOT, "scripts", "print", "pdf-header.tex");
 const LUA_FILTER = path.join(ROOT, "scripts", "print", "keep-with-next.lua");
 
-const BLOCKS = [
-  { number: 1, title: "Arrays", dir: "1. Arrays" },
-  { number: 2, title: "Linked Lists", dir: "2. Linked Lists" },
-  { number: 3, title: "Recursion", dir: "3.Recursion" },
-  { number: 4, title: "Sorting", dir: "4.Sorting" },
-  { number: 5, title: "Binary Search", dir: "5.Binary Search" },
-  { number: 6, title: "Trees", dir: "6.Trees" }
-];
+const BLOCK_FOLDER_PATTERN = /^(\d+)\.(?:\s*)?(.*)$/;
 
 function ensureExists(targetPath, description) {
   if (!fs.existsSync(targetPath)) {
@@ -96,6 +89,40 @@ function sortByNumericPrefix(fileNames) {
   });
 }
 
+function discoverBlocks() {
+  ensureExists(COURSE_DIR, "Course directory");
+
+  const blocks = fs
+    .readdirSync(COURSE_DIR, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => {
+      const match = entry.name.match(BLOCK_FOLDER_PATTERN);
+      if (!match) {
+        return null;
+      }
+
+      const number = Number(match[1]);
+      const rawTitle = match[2].trim();
+      const title = rawTitle.length > 0 ? rawTitle : `Block ${number}`;
+
+      return {
+        number,
+        title,
+        dir: entry.name
+      };
+    })
+    .filter((block) => block !== null)
+    .sort((left, right) => left.number - right.number || left.title.localeCompare(right.title));
+
+  if (blocks.length === 0) {
+    throw new Error(
+      `No numbered top-level folders found in course directory: ${normalizePathForMarkdown(COURSE_DIR)}`
+    );
+  }
+
+  return blocks;
+}
+
 function normalizePathForMarkdown(absPath) {
   return path.relative(ROOT, absPath).split(path.sep).join("/");
 }
@@ -108,13 +135,41 @@ function normalizeImageLinks(markdownContent, blockAbsDir) {
   });
 }
 
+function shiftMarkdownHeadings(markdownContent, levels) {
+  const lines = markdownContent.split("\n");
+  let insideFence = false;
+
+  return lines
+    .map((line) => {
+      const normalizedLine = line.replace(/\r$/, "");
+
+      if (/^```/.test(normalizedLine.trim())) {
+        insideFence = !insideFence;
+        return normalizedLine;
+      }
+
+      if (insideFence) {
+        return normalizedLine;
+      }
+
+      const headingMatch = normalizedLine.match(/^(#{1,6})(\s+.*)$/);
+      if (!headingMatch) {
+        return normalizedLine;
+      }
+
+      const nextLevel = Math.min(6, headingMatch[1].length + levels);
+      return `${"#".repeat(nextLevel)}${headingMatch[2]}`;
+    })
+    .join("\n");
+}
+
 function labelForBlock(block, suffix) {
   const slug = block.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
   return `blk-${slug}-${suffix}`;
 }
 
-function buildCustomIndexLatex() {
-  const rows = BLOCKS.map((block) => {
+function buildCustomIndexLatex(blocks) {
+  const rows = blocks.map((block) => {
     const startLabel = labelForBlock(block, "start");
     const endLabel = labelForBlock(block, "end");
     return `${block.number}. ${block.title} & \\pageref{${startLabel}}--\\pageref{${endLabel}} \\\\`;
@@ -135,8 +190,8 @@ function buildCustomIndexLatex() {
   ].join("\n");
 }
 
-function buildDocxManualIndex() {
-  const rows = BLOCKS.map((block) => `| ${block.number}. ${block.title} | ______ to ______ |`).join("\n");
+function buildDocxManualIndex(blocks) {
+  const rows = blocks.map((block) => `| ${block.number}. ${block.title} | ______ to ______ |`).join("\n");
 
   return [
     "# Index By Block",
@@ -164,7 +219,7 @@ function blankSeparatorPageDocx() {
   ].join("\n");
 }
 
-function buildPdfMasterMarkdown() {
+function buildPdfMasterMarkdown(blocks) {
   ensureExists(COURSE_DIR, "Course directory");
 
   const today = new Date().toISOString().slice(0, 10);
@@ -180,10 +235,10 @@ function buildPdfMasterMarkdown() {
   lines.push("\\end{titlepage}");
   lines.push("\\setcounter{page}{1}");
   lines.push("");
-  lines.push(buildCustomIndexLatex());
+  lines.push(buildCustomIndexLatex(blocks));
   lines.push("");
 
-  BLOCKS.forEach((block, blockIndex) => {
+  blocks.forEach((block, blockIndex) => {
     const blockAbsDir = path.join(COURSE_DIR, block.dir);
     ensureExists(blockAbsDir, `Block directory for ${block.title}`);
 
@@ -208,16 +263,17 @@ function buildPdfMasterMarkdown() {
       const mdAbsPath = path.join(blockAbsDir, mdFile);
       const source = fs.readFileSync(mdAbsPath, "utf8");
       const normalizedSource = normalizeImageLinks(source, blockAbsDir);
+      const formattedSource = shiftMarkdownHeadings(normalizedSource, 1);
 
       lines.push(`<!-- source: ${normalizePathForMarkdown(mdAbsPath)} -->`);
-      lines.push(normalizedSource.trim());
+      lines.push(formattedSource.trim());
       lines.push("");
     }
 
     lines.push(`\\label{${endLabel}}`);
     lines.push("");
 
-    if (blockIndex < BLOCKS.length - 1) {
+    if (blockIndex < blocks.length - 1) {
       lines.push(blankSeparatorPageLatex());
       lines.push("");
     }
@@ -226,7 +282,7 @@ function buildPdfMasterMarkdown() {
   return lines.join("\n");
 }
 
-function buildDocxMasterMarkdown() {
+function buildDocxMasterMarkdown(blocks) {
   ensureExists(COURSE_DIR, "Course directory");
 
   const today = new Date().toISOString().slice(0, 10);
@@ -240,12 +296,12 @@ function buildDocxMasterMarkdown() {
   lines.push("");
   lines.push(blankSeparatorPageDocx());
   lines.push("");
-  lines.push(buildDocxManualIndex());
+  lines.push(buildDocxManualIndex(blocks));
   lines.push("");
   lines.push(blankSeparatorPageDocx());
   lines.push("");
 
-  BLOCKS.forEach((block, blockIndex) => {
+  blocks.forEach((block, blockIndex) => {
     const blockAbsDir = path.join(COURSE_DIR, block.dir);
     ensureExists(blockAbsDir, `Block directory for ${block.title}`);
 
@@ -266,13 +322,14 @@ function buildDocxMasterMarkdown() {
       const mdAbsPath = path.join(blockAbsDir, mdFile);
       const source = fs.readFileSync(mdAbsPath, "utf8");
       const normalizedSource = normalizeImageLinks(source, blockAbsDir);
+      const formattedSource = shiftMarkdownHeadings(normalizedSource, 1);
 
       lines.push(`<!-- source: ${normalizePathForMarkdown(mdAbsPath)} -->`);
-      lines.push(normalizedSource.trim());
+      lines.push(formattedSource.trim());
       lines.push("");
     }
 
-    if (blockIndex < BLOCKS.length - 1) {
+    if (blockIndex < blocks.length - 1) {
       lines.push(blankSeparatorPageDocx());
       lines.push("");
     }
@@ -341,11 +398,12 @@ function main() {
   }
 
   const format = resolveFormat();
+  const blocks = discoverBlocks();
 
   ensureDir(WORK_DIR);
 
   if (format === "docx") {
-    const masterDocx = buildDocxMasterMarkdown();
+    const masterDocx = buildDocxMasterMarkdown(blocks);
     fs.writeFileSync(MASTER_DOCX_MD, masterDocx, "utf8");
     runPandocDocx(MASTER_DOCX_MD, FINAL_DOCX);
     console.log(`DOCX generated successfully: ${normalizePathForMarkdown(FINAL_DOCX)}`);
@@ -357,7 +415,7 @@ function main() {
 
   const pdfEngine = detectPdfEngine();
 
-  const master = buildPdfMasterMarkdown();
+  const master = buildPdfMasterMarkdown(blocks);
   fs.writeFileSync(MASTER_MD, master, "utf8");
 
   // First pass resolves references and page anchors.

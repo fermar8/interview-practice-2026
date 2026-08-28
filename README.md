@@ -17,8 +17,9 @@ What this export includes:
 - table of contents
 - custom index page with block page ranges
 - page numbers in footer
-- blank separator page between the 6 top-level blocks
+- blank separator page between top-level blocks
 - pagination controls to reduce orphaned titles and cut images
+- automatic inclusion of all numbered top-level folders in `neetcode courses/DSA for beginners`
 
 Prerequisites on Windows:
 
@@ -45,6 +46,7 @@ What the DOCX export includes:
 - the same block ordering as the PDF export
 - page-break separators between top-level blocks
 - a manual index table you can fill in after editing page layout in Word
+- automatic inclusion of all numbered top-level folders in `neetcode courses/DSA for beginners`
 
 DOCX notes:
 

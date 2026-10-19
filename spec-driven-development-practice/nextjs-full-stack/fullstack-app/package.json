@@ -1,0 +1,43 @@
+{
+  "name": "fullstack-app",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "db:up": "docker compose up -d postgres",
+    "db:down": "docker compose down",
+    "db:init": "docker compose up -d postgres && node scripts/init-db.mjs",
+    "dev": "docker compose up -d postgres && node scripts/init-db.mjs && next dev",
+    "build": "docker compose up -d postgres && node scripts/init-db.mjs && next build",
+    "start": "docker compose up -d postgres && node scripts/init-db.mjs && next start",
+    "lint": "eslint .",
+    "test:unit": "jest --runInBand tests/unit",
+    "test:integration": "node scripts/run-integration-tests.mjs",
+    "test": "pnpm run test:unit && pnpm run test:integration",
+    "typecheck": "tsc --noEmit",
+    "db:check": "node -e \"const { Client } = require('pg'); const client = new Client({ connectionString: process.env.DATABASE_URL }); client.connect().then(() => { console.log('Database connection OK'); return client.end(); }).catch((error) => { console.error(error.message); process.exit(1); });\""
+  },
+  "dependencies": {
+    "next": "16.4.2",
+    "pg": "^8.23.1",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/turbopack": "^4",
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^20",
+    "@types/pg": "^8.23.1",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.4.2",
+    "jest": "^30.5.2",
+    "jest-environment-jsdom": "^30.5.2",
+    "tailwindcss": "^4",
+    "ts-node": "^10.9.2",
+    "typescript": "^5"
+  }
+}

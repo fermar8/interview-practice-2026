@@ -12,6 +12,7 @@ type ReservationRow = {
   slot_id: string;
   user_id: string;
   created_at: string;
+  cancelled_at: string | null;
 };
 
 let databasePool: Pool | undefined;
@@ -59,13 +60,24 @@ export async function initializeDatabase(): Promise<void> {
         id TEXT PRIMARY KEY,
         slot_id TEXT NOT NULL REFERENCES slots(id) ON DELETE CASCADE,
         user_id TEXT NOT NULL,
-        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        cancelled_at TIMESTAMPTZ NULL
       );
     `);
 
     await client.query(`
-      CREATE UNIQUE INDEX IF NOT EXISTS reservation_slot_user_unique_idx
-      ON reservations (slot_id, user_id);
+      ALTER TABLE reservations
+      ADD COLUMN IF NOT EXISTS cancelled_at TIMESTAMPTZ NULL;
+    `);
+
+    await client.query(`
+      DROP INDEX IF EXISTS reservation_slot_user_unique_idx;
+    `);
+
+    await client.query(`
+      CREATE UNIQUE INDEX IF NOT EXISTS reservation_active_slot_user_unique_idx
+      ON reservations (slot_id, user_id)
+      WHERE cancelled_at IS NULL;
     `);
 
     schemaIsReady = true;
@@ -115,15 +127,6 @@ export async function createSlotRow(capacity: number): Promise<Slot> {
   const client = await getPool().connect();
 
   try {
-    const existing = await client.query<SlotRow>(
-      "SELECT id, capacity, reserved FROM slots WHERE capacity = $1 LIMIT 1",
-      [capacity],
-    );
-
-    if (existing.rowCount && existing.rows[0]) {
-      return mapSlot(existing.rows[0]);
-    }
-
     const slotId = await getNextSequentialId(client, "slot", "slots");
     const inserted = await client.query<SlotRow>(
       "INSERT INTO slots (id, capacity, reserved) VALUES ($1, $2, 0) RETURNING id, capacity, reserved",
@@ -150,7 +153,7 @@ export async function listReservationRows(): Promise<Reservation[]> {
   await initializeDatabase();
 
   const result = await getPool().query<ReservationRow>(
-    "SELECT id, slot_id, user_id, created_at FROM reservations ORDER BY created_at DESC",
+    "SELECT id, slot_id, user_id, created_at, cancelled_at FROM reservations WHERE cancelled_at IS NULL ORDER BY created_at DESC",
   );
 
   return result.rows.map(mapReservation);
@@ -176,7 +179,7 @@ export async function createReservationRow(
     await client.query("BEGIN");
 
     const duplicate = await client.query<ReservationRow>(
-      "SELECT id, slot_id, user_id, created_at FROM reservations WHERE slot_id = $1 AND user_id = $2 LIMIT 1",
+      "SELECT id, slot_id, user_id, created_at, cancelled_at FROM reservations WHERE slot_id = $1 AND user_id = $2 AND cancelled_at IS NULL LIMIT 1",
       [slotId, userId],
     );
 
@@ -207,7 +210,7 @@ export async function createReservationRow(
     const inserted = await client.query<ReservationRow>(
       `INSERT INTO reservations (id, slot_id, user_id, created_at)
        VALUES ($1, $2, $3, NOW())
-       RETURNING id, slot_id, user_id, created_at`,
+       RETURNING id, slot_id, user_id, created_at, cancelled_at`,
       [reservationId, slotId, userId],
     );
 
@@ -233,7 +236,7 @@ export async function getReservationRow(
   await initializeDatabase();
 
   const result = await getPool().query<ReservationRow>(
-    "SELECT id, slot_id, user_id, created_at FROM reservations WHERE id = $1",
+    "SELECT id, slot_id, user_id, created_at, cancelled_at FROM reservations WHERE id = $1 AND cancelled_at IS NULL",
     [id],
   );
 
@@ -249,16 +252,21 @@ export async function cancelReservationRow(id: string): Promise<void> {
     await client.query("BEGIN");
 
     const result = await client.query<{ slot_id: string }>(
-      "DELETE FROM reservations WHERE id = $1 RETURNING slot_id",
+      `UPDATE reservations
+       SET cancelled_at = NOW()
+       WHERE id = $1 AND cancelled_at IS NULL
+       RETURNING slot_id`,
       [id],
     );
 
-    if (result.rowCount && result.rows[0]) {
-      await client.query(
-        "UPDATE slots SET reserved = GREATEST(0, reserved - 1) WHERE id = $1",
-        [result.rows[0].slot_id],
-      );
+    if (!result.rowCount || !result.rows[0]) {
+      throw new Error("Reservation not found");
     }
+
+    await client.query(
+      "UPDATE slots SET reserved = GREATEST(0, reserved - 1) WHERE id = $1",
+      [result.rows[0].slot_id],
+    );
 
     await client.query("COMMIT");
   } catch (error) {

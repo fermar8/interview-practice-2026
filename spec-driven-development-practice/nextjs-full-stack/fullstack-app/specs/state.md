@@ -124,7 +124,7 @@ Status: Done
 - A single validation path is used for slot capacity, reservation uniqueness, and final-seat protection logic.
 - Slot and reservation row creation follows the canonical ID rules: `slot-<n>` and `reservation-<n>`.
 - Repository tests are configured as real integration tests against a Dockerized PostgreSQL instance, and the project uses `docker compose up -d postgres` to bring the database up before validation.
-- Local developer configuration points to the Dockerized database at `localhost:55433` to avoid collisions with machine-local PostgreSQL services.
+- Local developer runtime uses `localhost:5432`; Dockerized PostgreSQL at `localhost:55433` is reserved for integration tests.
 
 ## Phase 10: Web architecture parity
 
@@ -141,5 +141,5 @@ Status: Done
 
 - Compared implementation, specification documents, and state plan as a single source of truth.
 - Updated the state and web specification docs to reflect the canonical dashboard-first architecture and the real unit/integration test layout.
-- Normalized local Dockerized PostgreSQL host-port documentation to `localhost:55433` and verified script alignment.
+- Normalized runtime vs integration database policy: local app runtime uses `localhost:5432`, while integration tests use Dockerized PostgreSQL at `localhost:55433`.
 - Re-ran validation gates (`lint`, `typecheck`, `test:unit`, `test:integration`) and confirmed documentation now matches current runtime behavior.

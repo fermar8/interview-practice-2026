@@ -50,13 +50,24 @@ async function initDatabase() {
         id TEXT PRIMARY KEY,
         slot_id TEXT NOT NULL REFERENCES slots(id) ON DELETE CASCADE,
         user_id TEXT NOT NULL,
-        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        cancelled_at TIMESTAMPTZ NULL
       );
     `);
 
     await client.query(`
-      CREATE UNIQUE INDEX IF NOT EXISTS reservation_slot_user_unique_idx
-      ON reservations (slot_id, user_id);
+      ALTER TABLE reservations
+      ADD COLUMN IF NOT EXISTS cancelled_at TIMESTAMPTZ NULL;
+    `);
+
+    await client.query(`
+      DROP INDEX IF EXISTS reservation_slot_user_unique_idx;
+    `);
+
+    await client.query(`
+      CREATE UNIQUE INDEX IF NOT EXISTS reservation_active_slot_user_unique_idx
+      ON reservations (slot_id, user_id)
+      WHERE cancelled_at IS NULL;
     `);
 
     console.log("Database schema initialized successfully.");

@@ -4,7 +4,6 @@ export type { Reservation, Slot };
 
 const slots = new Map<string, Slot>();
 const reservations = new Map<string, Reservation>();
-const slotIdsByCapacity = new Map<number, string>();
 const reservationIdsByKey = new Map<string, string>();
 let nextSlotNumber = 1;
 let nextReservationNumber = 1;
@@ -46,15 +45,6 @@ const nextReservationId = (): string => {
 export function createSlot(capacity: number): Slot {
   validateSlotCapacity(capacity);
 
-  const existingSlotId = slotIdsByCapacity.get(capacity);
-
-  if (existingSlotId) {
-    const existingSlot = slots.get(existingSlotId);
-    if (existingSlot) {
-      return existingSlot;
-    }
-  }
-
   const slot: Slot = {
     id: nextSlotId(),
     capacity,
@@ -62,7 +52,6 @@ export function createSlot(capacity: number): Slot {
   };
 
   slots.set(slot.id, slot);
-  slotIdsByCapacity.set(capacity, slot.id);
 
   return slot;
 }

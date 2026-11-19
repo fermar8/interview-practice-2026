@@ -22,7 +22,8 @@ Additional setup requirements:
 
 - Install dependencies with `pnpm install`.
 - Configure `DATABASE_URL` in the local environment.
-- Use the Dockerized PostgreSQL setup exposed at `localhost:55433` for local runtime and integration validation.
+- Use local PostgreSQL on `localhost:5432` for normal app runtime (`dev`, `build`, `start`).
+- Use the Dockerized PostgreSQL setup for integration tests only (`test:integration`), where the container is exposed at `localhost:55433`.
 - Ensure TypeScript is configured for type checking.
 - Keep the app structure compatible with the current Next.js App Router layout.
 - Keep the dashboard UI under the `app/web` area and the API handlers under `app/api`.

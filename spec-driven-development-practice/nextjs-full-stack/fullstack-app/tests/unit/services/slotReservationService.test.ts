@@ -4,15 +4,18 @@ describe("slot reservation service contract", () => {
     return await import("../../../app/services/slotReservationService");
   };
 
-  it("should create and list slots without duplicates", async () => {
+  it("should create distinct slots even with the same capacity", async () => {
     const { createSlot, listSlots } = await loadService();
     const first = createSlot(10);
     const second = createSlot(10);
 
     expect(first.capacity).toBe(10);
     expect(first.reserved).toBe(0);
-    expect(second).toEqual(first);
+    expect(second.id).not.toBe(first.id);
+    expect(second.capacity).toBe(10);
+    expect(second.reserved).toBe(0);
     expect(listSlots()).toContainEqual(first);
+    expect(listSlots()).toContainEqual(second);
   });
 
   it("should create and retrieve a reservation using canonical ids and ISO timestamps", async () => {

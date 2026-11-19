@@ -42,6 +42,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     const slot = await createSlotRow(capacity);
     return NextResponse.json(slot, { status: 201 });
   } catch (error) {
+    console.log(error)
     return NextResponse.json(
       {
         error:

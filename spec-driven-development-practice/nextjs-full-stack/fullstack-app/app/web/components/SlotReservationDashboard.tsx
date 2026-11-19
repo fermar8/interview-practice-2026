@@ -132,6 +132,10 @@ export default function SlotReservationDashboard() {
       );
 
       if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error("Reservation not found");
+        }
+
         throw new Error("Failed to cancel reservation");
       }
 
@@ -147,7 +151,12 @@ export default function SlotReservationDashboard() {
         ),
       );
       setError(null);
-    } catch {
+    } catch (error) {
+      if (error instanceof Error && error.message === "Reservation not found") {
+        setError("Reservation not found.");
+        return;
+      }
+
       setError("Database connection unavailable.");
     }
   };

@@ -74,6 +74,13 @@ export async function DELETE(request: Request): Promise<NextResponse> {
     await cancelReservationRow(reservationId);
     return NextResponse.json({ ok: true });
   } catch (error) {
+    if (error instanceof Error && error.message === "Reservation not found") {
+      return NextResponse.json(
+        { error: "Reservation not found" },
+        { status: 404 },
+      );
+    }
+
     return NextResponse.json(
       {
         error:
